@@ -1,16 +1,76 @@
-
 server:
   port: 8080
 spring:
   application:
     name: sharding-start
 
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://106.15.207.98:3306/alltest?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&useSSL=false&zeroDateTimeBehavior=convertToNull&serverTimezone=Asia/Shanghai
-    username: root
-    password: Acdmdb20!
+#  datasource:
+#    driver-class-name: com.mysql.cj.jdbc.Driver
+#    url: jdbc:mysql://106.15.207.98:3306/alltest?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&useSSL=false&zeroDateTimeBehavior=convertToNull&serverTimezone=Asia/Shanghai
+#    username: root
+#    password: Acdmdb20!
 
   jpa:
     show-sql: true
+
+  shardingsphere:
+    datasource:
+      #定义数据源名称
+      names: db0,db1
+
+      #db0配置
+      db0:
+        type: com.zaxxer.hikari.HikariDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        jdbc-url: jdbc:mysql://106.15.207.98:3306/alltest0?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&useSSL=false&zeroDateTimeBehavior=convertToNull&serverTimezone=Asia/Shanghai
+        username: root
+        password: Acdmdb20!
+
+      #db1配置
+      db1:
+        type: com.zaxxer.hikari.HikariDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        jdbc-url: jdbc:mysql://106.15.207.98:3306/alltest1?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&useSSL=false&zeroDateTimeBehavior=convertToNull&serverTimezone=Asia/Shanghai
+        username: root
+        password: Acdmdb20!
+
+    sharding:
+      default-database-strategy:
+        inline:
+          # 分库策略 根据id取模确定数据进哪个数据库
+          sharding-column: id
+          algorithm-expression: db$->{id % 2}
+      tables:
+        # 具体分表策略
+        # 节点 alltest0.user0,alltest0.user1,alltest1.user0,alltest1.user1
+        user:
+          actual-data-nodes: db$->{0..1}.user$->{0..1}
+          table-strategy:
+            inline:
+              # 分表字段id
+              sharding-column: id
+              # 分表策略 根据id取模,确定数据最终落在那个表中
+              algorithm-expression: user$->{id % 2}
+
+          # 使用SNOWFLAKE算法生成主键
+          key-generator:
+            column: id
+            type: SNOWFLAKE
+    props:
+      sql:
+        show: true
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
